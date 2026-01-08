@@ -1,11 +1,20 @@
 import { Users, Truck, FileText, ClipboardCheck, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useUserContext } from './UserContext';
-import { useState } from 'react';
-import { ReportesStats } from './ReportesStats';
 
 export function HomeView() {
   const { currentUser, conductores, vehiculos, reportes } = useUserContext();
-  const [showStats, setShowStats] = useState(false);
+
+  const handleNavigateToConductores = () => {
+    window.dispatchEvent(new CustomEvent('navigate-to-conductores'));
+  };
+
+  const handleNavigateToVehiculos = () => {
+    window.dispatchEvent(new CustomEvent('navigate-to-vehiculos'));
+  };
+
+  const handleNavigateToReportes = () => {
+    window.dispatchEvent(new CustomEvent('navigate-to-reportes'));
+  };
 
   const getDocumentStatus = (fechaVencimiento: string) => {
     const today = new Date();
@@ -38,7 +47,6 @@ export function HomeView() {
     : reportes;
 
   const canManageMaestros = currentUser?.rol === 'Administrador' || currentUser?.rol === 'Programador';
-  const canViewStats = currentUser?.rol === 'Mantenimiento' || currentUser?.rol === 'Operador Isla';
 
   return (
     <div className="space-y-6">
@@ -51,7 +59,10 @@ export function HomeView() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {canManageMaestros && (
           <>
-            <div className="bg-white rounded-lg shadow p-6">
+            <button
+              onClick={handleNavigateToConductores}
+              className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer text-left"
+            >
               <div className="flex items-center justify-between mb-4">
                 <div className="bg-blue-100 p-3 rounded-lg">
                   <Users className="size-6 text-blue-600" />
@@ -79,9 +90,12 @@ export function HomeView() {
                   <span>Todos vigentes</span>
                 </div>
               )}
-            </div>
+            </button>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <button
+              onClick={handleNavigateToVehiculos}
+              className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer text-left"
+            >
               <div className="flex items-center justify-between mb-4">
                 <div className="bg-green-100 p-3 rounded-lg">
                   <Truck className="size-6 text-green-600" />
@@ -109,13 +123,13 @@ export function HomeView() {
                   <span>Todos vigentes</span>
                 </div>
               )}
-            </div>
+            </button>
           </>
         )}
 
-        <div
-          onClick={canViewStats ? () => setShowStats(true) : undefined}
-          className={`bg-white rounded-lg shadow p-6 ${canViewStats ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''}`}
+        <button
+          onClick={handleNavigateToReportes}
+          className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer text-left"
         >
           <div className="flex items-center justify-between">
             <div className="bg-purple-100 p-3 rounded-lg">
@@ -126,14 +140,12 @@ export function HomeView() {
               <p className="text-gray-900">{misReportes.length}</p>
             </div>
           </div>
-          {canViewStats && (
-            <div className="mt-3 text-xs text-blue-600 text-center">
-              Click para ver estadísticas
-            </div>
-          )}
-        </div>
+        </button>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <button
+          onClick={handleNavigateToReportes}
+          className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer text-left"
+        >
           <div className="flex items-center justify-between">
             <div className="bg-orange-100 p-3 rounded-lg">
               <ClipboardCheck className="size-6 text-orange-600" />
@@ -149,7 +161,7 @@ export function HomeView() {
               </p>
             </div>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Recent Activity */}
@@ -244,9 +256,6 @@ export function HomeView() {
           </div>
         </div>
       )}
-
-      {/* Stats Modal */}
-      {showStats && <ReportesStats onClose={() => setShowStats(false)} />}
     </div>
   );
 }

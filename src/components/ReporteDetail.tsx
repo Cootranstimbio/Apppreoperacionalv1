@@ -1,4 +1,4 @@
-import { ArrowLeft, Eye, X } from 'lucide-react';
+import { ArrowLeft, Eye, X, FileText, AlertCircle } from 'lucide-react';
 import { Reporte, useUserContext } from './UserContext';
 import { useState } from 'react';
 
@@ -41,6 +41,26 @@ export function ReporteDetail({ reporte, onClose }: ReporteDetailProps) {
           <ArrowLeft className="size-5" />
           Volver a la lista
         </button>
+
+        {/* Alerta de Documentación Vencida */}
+        {reporte.documentacionVencida && reporte.motivoBloqueo && (
+          <div className="mb-6 bg-red-50 border-2 border-red-500 rounded-lg p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <AlertCircle className="size-10 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-red-900 mb-2">⚠️ VEHÍCULO/CONDUCTOR BLOQUEADO</h3>
+                <p className="text-red-800 p-3 bg-red-100 rounded border border-red-300">
+                  <strong>{reporte.motivoBloqueo}</strong>
+                </p>
+                <p className="text-red-700 mt-3 text-sm">
+                  Este vehículo NO debe ser despachado hasta renovar la documentación correspondiente.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="border-b border-gray-200 pb-4 mb-4">
           <h2 className="text-gray-900 mb-4">Detalle del Reporte</h2>
@@ -149,6 +169,52 @@ export function ReporteDetail({ reporte, onClose }: ReporteDetailProps) {
           </div>
         </div>
       ))}
+
+      {/* Documentos Generales */}
+      {reporte.documentosGenerales && reporte.documentosGenerales.length > 0 && (
+        <div className="bg-white rounded-lg shadow">
+          <div className="p-6 border-b border-gray-200 bg-purple-50">
+            <h3 className="text-gray-900">Documentos y Evidencias Generales</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              {reporte.documentosGenerales.length} documento(s) adjunto(s)
+            </p>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {reporte.documentosGenerales.map((doc, index) => (
+                <div
+                  key={index}
+                  className="relative border border-gray-200 rounded-lg overflow-hidden group cursor-pointer shadow hover:shadow-lg transition-shadow"
+                  onClick={() => handlePreview(doc.url, doc.type)}
+                >
+                  {doc.type.startsWith('image/') ? (
+                    <div className="aspect-video">
+                      <img
+                        src={doc.url}
+                        alt={doc.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-video bg-gradient-to-br from-blue-100 to-blue-200 flex flex-col items-center justify-center">
+                      <FileText className="size-16 text-blue-600 mb-2" />
+                      <span className="text-sm text-blue-800 text-center px-2">
+                        {doc.type.split('/')[1]?.toUpperCase() || 'DOC'}
+                      </span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Eye className="size-8 text-white" />
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent text-white p-3">
+                    <p className="text-sm truncate" title={doc.name}>{doc.name}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Signatures */}
       <div className="bg-white rounded-lg shadow p-6">

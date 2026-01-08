@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Home,
   Users,
@@ -10,7 +10,8 @@ import {
   Menu,
   X,
   UserCircle,
-  ListChecks
+  ListChecks,
+  UserCog
 } from 'lucide-react';
 import { useUserContext } from './UserContext';
 import { HomeView } from './HomeView';
@@ -20,13 +21,14 @@ import { ChequeoView } from './ChequeoView';
 import { ReportesView } from './ReportesView';
 import { PerfilView } from './PerfilView';
 import { ItemsManagement } from './ItemsManagement';
+import { UsersManagement } from './UsersManagement';
 import { toast } from 'sonner@2.0.3';
 
 interface DashboardProps {
   onLogout: () => void;
 }
 
-type View = 'home' | 'conductores' | 'vehiculos' | 'chequeo' | 'reportes' | 'perfil' | 'items';
+type View = 'home' | 'conductores' | 'vehiculos' | 'chequeo' | 'reportes' | 'perfil' | 'items' | 'users';
 
 export function Dashboard({ onLogout }: DashboardProps) {
   const { currentUser, setCurrentUser } = useUserContext();
@@ -37,7 +39,33 @@ export function Dashboard({ onLogout }: DashboardProps) {
 
   const canManageMaestros = currentUser.rol === 'Administrador' || currentUser.rol === 'Programador';
   const canDoChequeo = currentUser.rol === 'Mantenimiento' || currentUser.rol === 'Operador Isla';
-  const canManageItems = currentUser.rol === 'Programador';
+  const canManageItems = currentUser.rol === 'Programador' || currentUser.rol === 'Administrador';
+  const canManageUsers = currentUser.rol === 'Administrador' || currentUser.rol === 'Programador';
+
+  // Escuchar evento de navegación a reportes
+  useEffect(() => {
+    const handleNavigateToReportes = () => {
+      setCurrentView('reportes');
+    };
+
+    const handleNavigateToConductores = () => {
+      setCurrentView('conductores');
+    };
+
+    const handleNavigateToVehiculos = () => {
+      setCurrentView('vehiculos');
+    };
+
+    window.addEventListener('navigate-to-reportes', handleNavigateToReportes);
+    window.addEventListener('navigate-to-conductores', handleNavigateToConductores);
+    window.addEventListener('navigate-to-vehiculos', handleNavigateToVehiculos);
+    
+    return () => {
+      window.removeEventListener('navigate-to-reportes', handleNavigateToReportes);
+      window.removeEventListener('navigate-to-conductores', handleNavigateToConductores);
+      window.removeEventListener('navigate-to-vehiculos', handleNavigateToVehiculos);
+    };
+  }, []);
 
   const handleLogout = () => {
     setCurrentUser(null);
@@ -52,6 +80,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
     { id: 'chequeo' as View, icon: ClipboardCheck, label: 'Chequeo', show: canDoChequeo },
     { id: 'reportes' as View, icon: FileText, label: 'Reportes', show: true },
     { id: 'items' as View, icon: ListChecks, label: 'Ítems de Chequeo', show: canManageItems },
+    { id: 'users' as View, icon: UserCog, label: 'Usuarios', show: canManageUsers },
     { id: 'perfil' as View, icon: Settings, label: 'Perfil', show: true }
   ].filter(item => item.show);
 
@@ -71,6 +100,8 @@ export function Dashboard({ onLogout }: DashboardProps) {
         return <PerfilView />;
       case 'items':
         return <ItemsManagement />;
+      case 'users':
+        return <UsersManagement />;
       default:
         return <HomeView />;
     }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, Download, Search, Filter, Printer } from 'lucide-react';
+import { Eye, Download, Search, Filter } from 'lucide-react';
 import { useUserContext } from './UserContext';
 import { ReporteDetail } from './ReporteDetail';
 
@@ -241,13 +241,6 @@ export function ReportesView() {
                           title="Descargar PDF"
                         >
                           <Download className="size-4" />
-                        </button>
-                        <button
-                          onClick={() => generatePDF(reporte.id)}
-                          className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                          title="Imprimir"
-                        >
-                          <Printer className="size-4" />
                         </button>
                       </div>
                     </td>

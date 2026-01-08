@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Eye, EyeOff, AlertCircle, Truck } from 'lucide-react';
 import { useUserContext } from './UserContext';
-import { toast, Toaster } from 'sonner@2.0.3';
+import { toast } from 'sonner@2.0.3';
 
 interface LoginProps {
   onLogin: () => void;
@@ -31,7 +31,6 @@ export function Login({ onLogin }: LoginProps) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
-      <Toaster position="top-center" richColors />
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-8">
         <div className="flex flex-col items-center mb-8">
           <div className="bg-blue-600 p-4 rounded-full mb-4">

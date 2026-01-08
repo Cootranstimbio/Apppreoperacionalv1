@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Edit2, Trash2, Search, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useUserContext, Vehiculo } from './UserContext';
 import { toast } from 'sonner@2.0.3';
 

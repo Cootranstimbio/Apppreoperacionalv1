@@ -57,8 +57,11 @@ export interface Reporte {
   inspector: User;
   tipo: 'Mantenimiento' | 'Planillaje';
   items: ReporteItem[];
+  documentosGenerales?: { name: string; url: string; type: string }[];
   firmaInspector?: string;
   firmaConductor?: string;
+  documentacionVencida?: boolean;
+  motivoBloqueo?: string;
 }
 
 interface UserContextType {
