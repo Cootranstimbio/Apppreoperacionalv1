@@ -69,6 +69,52 @@ export function ReportesView() {
       })
       .join('');
 
+    // Documentos generales HTML - IMÁGENES GRANDES
+    const documentosGeneralesHTML = reporte.documentosGenerales && reporte.documentosGenerales.length > 0 ? `
+      <div style="margin: 30px 0; padding: 20px; background: #f8f5ff; border: 2px solid #9333ea; border-radius: 8px;">
+        <h2 style="color: #9333ea; margin-bottom: 20px;">Documentos y Evidencias Generales</h2>
+        <p style="margin-bottom: 15px; color: #6b7280;">${reporte.documentosGenerales.length} documento(s) adjunto(s)</p>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 15px;">
+          ${reporte.documentosGenerales.map(doc => {
+            if (doc.type.startsWith('image/')) {
+              return `
+                <div style="page-break-inside: avoid;">
+                  <img src="${doc.url}" style="width: 100%; height: 500px; object-fit: contain; border: 2px solid #9333ea; border-radius: 8px; background: white;" />
+                  <p style="margin-top: 8px; text-align: center; font-size: 14px; color: #6b7280;">${doc.name}</p>
+                </div>
+              `;
+            } else {
+              return `
+                <div style="padding: 40px; border: 2px solid #9333ea; border-radius: 8px; text-align: center; background: white;">
+                  <div style="font-size: 48px; color: #9333ea; margin-bottom: 10px;">📄</div>
+                  <strong style="color: #9333ea;">${doc.type.split('/')[1]?.toUpperCase() || 'DOC'}</strong>
+                  <p style="margin-top: 8px; font-size: 14px; color: #6b7280;">${doc.name}</p>
+                </div>
+              `;
+            }
+          }).join('')}
+        </div>
+      </div>
+    ` : '';
+
+    // Alerta de bloqueo si existe
+    const alertaBloqueoHTML = reporte.documentacionVencida && reporte.motivoBloqueo ? `
+      <div style="margin: 20px 0; padding: 20px; background: #fef2f2; border: 3px solid #dc2626; border-radius: 8px;">
+        <div style="display: flex; align-items: start; gap: 15px;">
+          <div style="font-size: 36px;">⚠️</div>
+          <div>
+            <h3 style="color: #991b1b; margin: 0 0 10px 0;">VEHÍCULO/CONDUCTOR BLOQUEADO</h3>
+            <p style="color: #991b1b; margin: 0; padding: 10px; background: #fee2e2; border: 1px solid #dc2626; border-radius: 4px;">
+              <strong>${reporte.motivoBloqueo}</strong>
+            </p>
+            <p style="color: #7f1d1d; margin-top: 10px; font-size: 14px;">
+              Este vehículo NO debe ser despachado hasta renovar la documentación correspondiente.
+            </p>
+          </div>
+        </div>
+      </div>
+    ` : '';
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -96,6 +142,8 @@ export function ReportesView() {
 
         <h1>TRANSTIMBIO - Reporte de Chequeo Pre-Operacional</h1>
         
+        ${alertaBloqueoHTML}
+        
         <div class="header">
           <p><strong>Tipo de Chequeo:</strong> ${reporte.tipo}</p>
           <p><strong>Fecha:</strong> ${new Date(reporte.fecha).toLocaleDateString('es-CO')} ${new Date(reporte.fecha).toLocaleTimeString('es-CO')}</p>
@@ -106,6 +154,8 @@ export function ReportesView() {
 
         <h2>Ítems de Inspección</h2>
         ${itemsHTML}
+
+        ${documentosGeneralesHTML}
 
         <div class="signatures">
           <div class="signature-box">

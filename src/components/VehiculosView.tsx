@@ -55,12 +55,26 @@ export function VehiculosView() {
     e.preventDefault();
 
     if (editingVehiculo) {
+      // Verificar si el vehículo estaba bloqueado y ahora está apto
+      const oldStatus = getVehiculoStatus(editingVehiculo);
+      const newVehiculo = { ...editingVehiculo, ...formData } as Vehiculo;
+      const newStatus = getVehiculoStatus(newVehiculo);
+      const wasBlocked = oldStatus.status === 'vencido';
+      const isNowValid = newStatus.status === 'vigente';
+
       setVehiculos(
         vehiculos.map(v =>
           v.id === editingVehiculo.id ? { ...v, ...formData } as Vehiculo : v
         )
       );
-      toast.success('Vehículo actualizado correctamente');
+
+      if (wasBlocked && isNowValid) {
+        toast.success('✅ Vehículo actualizado - APTO PARA OPERAR', {
+          duration: 5000,
+        });
+      } else {
+        toast.success('Vehículo actualizado correctamente');
+      }
     } else {
       const newVehiculo: Vehiculo = {
         id: `v${Date.now()}`,

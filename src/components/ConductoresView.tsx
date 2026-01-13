@@ -41,12 +41,25 @@ export function ConductoresView() {
     e.preventDefault();
 
     if (editingConductor) {
+      // Verificar si el conductor estaba bloqueado y ahora está apto
+      const oldStatus = getDocumentStatus(editingConductor.licenciaVencimiento);
+      const newStatus = getDocumentStatus(formData.licenciaVencimiento || '');
+      const wasBlocked = oldStatus.status === 'vencido';
+      const isNowValid = newStatus.status === 'vigente';
+
       setConductores(
         conductores.map(c =>
           c.id === editingConductor.id ? { ...c, ...formData } as Conductor : c
         )
       );
-      toast.success('Conductor actualizado correctamente');
+
+      if (wasBlocked && isNowValid) {
+        toast.success('✅ Conductor actualizado - APTO PARA OPERAR', {
+          duration: 5000,
+        });
+      } else {
+        toast.success('Conductor actualizado correctamente');
+      }
     } else {
       const newConductor: Conductor = {
         id: `c${Date.now()}`,

@@ -187,6 +187,13 @@ export function Dashboard({ onLogout }: DashboardProps) {
                 <p className="text-gray-900">{currentUser.nombre}</p>
                 <p className="text-sm text-gray-600">{currentUser.email}</p>
               </div>
+              <button
+                onClick={handleLogout}
+                className="ml-2 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Cerrar Sesión"
+              >
+                <LogOut className="size-5" />
+              </button>
             </div>
           </div>
         </header>
