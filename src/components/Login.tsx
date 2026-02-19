@@ -2,32 +2,67 @@ import { useState } from 'react';
 import { Eye, EyeOff, AlertCircle, Truck } from 'lucide-react';
 import { useUserContext } from './UserContext';
 import { toast } from 'sonner@2.0.3';
+import { PasswordRecovery } from './PasswordRecovery';
 
 interface LoginProps {
   onLogin: () => void;
 }
 
 export function Login({ onLogin }: LoginProps) {
-  const { users, setCurrentUser } = useUserContext();
+  const { users, setUsers, setCurrentUser } = useUserContext();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showRecovery, setShowRecovery] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const user = users.find(
-      u => u.email === username && u.password === password
-    );
+    const user = users.find(u => u.email === username);
 
-    if (user) {
-      setCurrentUser(user);
+    if (!user) {
+      toast.error('Credenciales incorrectas. Verifique su usuario y contraseña.');
+      return;
+    }
+
+    // Check if user is blocked
+    if (user.isBlocked) {
+      toast.error('Usuario bloqueado tras 5 intentos fallidos. Contacte al administrador/programador para el desbloqueo.');
+      return;
+    }
+
+    // Check password
+    if (user.password === password) {
+      // Reset failed attempts on successful login
+      const updatedUser = { ...user, failedLoginAttempts: 0 };
+      setCurrentUser(updatedUser);
+      setUsers(users.map(u => u.id === user.id ? updatedUser : u));
       onLogin();
       toast.success(`Bienvenido, ${user.nombre}`);
     } else {
-      toast.error('Credenciales incorrectas. Verifique su usuario y contraseña.');
+      // Increment failed attempts
+      const failedAttempts = (user.failedLoginAttempts || 0) + 1;
+      const isNowBlocked = failedAttempts >= 5;
+      
+      const updatedUser = {
+        ...user,
+        failedLoginAttempts: failedAttempts,
+        isBlocked: isNowBlocked
+      };
+
+      setUsers(users.map(u => u.id === user.id ? updatedUser : u));
+
+      if (isNowBlocked) {
+        toast.error('Usuario bloqueado tras 5 intentos fallidos. Contacte al administrador/programador para el desbloqueo.');
+      } else {
+        toast.error(`Credenciales incorrectas. Intento ${failedAttempts} de 5.`);
+      }
     }
   };
+
+  if (showRecovery) {
+    return <PasswordRecovery onBack={() => setShowRecovery(false)} />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 p-4">
@@ -82,8 +117,8 @@ export function Login({ onLogin }: LoginProps) {
 
           <button
             type="button"
-            className="text-blue-600 hover:underline"
-            onClick={() => toast.info('Contacte al administrador para recuperar su contraseña')}
+            className="text-blue-600 hover:underline text-sm"
+            onClick={() => setShowRecovery(true)}
           >
             ¿Olvidó su contraseña?
           </button>

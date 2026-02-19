@@ -2,6 +2,12 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 
 export type Role = 'Administrador' | 'Programador' | 'Mantenimiento' | 'Operador Isla';
 
+export interface SecurityAnswers {
+  color: 'azul' | 'rosado' | 'negro';
+  numero: '1' | '2' | '3';
+  animal: 'perro' | 'gato' | 'loro';
+}
+
 export interface User {
   id: string;
   nombre: string;
@@ -10,6 +16,10 @@ export interface User {
   telefono: string;
   rol: Role;
   password: string;
+  securityAnswers?: SecurityAnswers;
+  failedLoginAttempts?: number;
+  isBlocked?: boolean;
+  avatarUrl?: string;
 }
 
 export interface Conductor {

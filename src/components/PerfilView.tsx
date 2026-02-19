@@ -1,13 +1,17 @@
-import { useState } from 'react';
-import { Eye, EyeOff, Save, User } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Eye, EyeOff, Save, User, Camera, Shield, Upload, Lock } from 'lucide-react';
 import { useUserContext } from './UserContext';
 import { toast } from 'sonner@2.0.3';
+import { SecurityQuestionsConfig } from './SecurityQuestionsConfig';
 
 export function PerfilView() {
   const { currentUser, setCurrentUser, users, setUsers } = useUserContext();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showSecurityConfig, setShowSecurityConfig] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     nombre: currentUser?.nombre || '',
@@ -90,19 +94,89 @@ export function PerfilView() {
     toast.success('Contraseña actualizada correctamente');
   };
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor seleccione una imagen');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const updatedUser = {
+        ...currentUser!,
+        avatarUrl: reader.result as string
+      };
+      setCurrentUser(updatedUser);
+      setUsers(users.map(u => (u.id === currentUser!.id ? updatedUser : u)));
+      toast.success('Foto de perfil actualizada');
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* Profile Info */}
+      {/* Profile Info with Avatar */}
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="bg-blue-100 p-4 rounded-full">
-            <User className="size-12 text-blue-600" />
+        <div className="flex items-start gap-6 mb-6">
+          <div className="relative">
+            {currentUser?.avatarUrl ? (
+              <img 
+                src={currentUser.avatarUrl} 
+                alt="Avatar" 
+                className="size-24 rounded-full object-cover border-4 border-blue-100"
+              />
+            ) : (
+              <div className="bg-blue-100 p-6 rounded-full">
+                <User className="size-12 text-blue-600" />
+              </div>
+            )}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 shadow-lg"
+              title="Cambiar foto de perfil"
+            >
+              <Upload className="size-4" />
+            </button>
           </div>
-          <div>
+          <div className="flex-1">
             <h2 className="text-gray-900">{currentUser?.nombre}</h2>
             <p className="text-gray-600">{currentUser?.rol}</p>
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
+              >
+                Seleccionar de Galería
+              </button>
+              <button
+                onClick={() => cameraInputRef.current?.click()}
+                className="px-4 py-2 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 flex items-center gap-2"
+              >
+                <Camera className="size-4" />
+                Tomar Foto
+              </button>
+            </div>
           </div>
         </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleAvatarChange}
+          className="hidden"
+        />
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleAvatarChange}
+          className="hidden"
+        />
 
         <div className="space-y-4">
           <div>
@@ -191,6 +265,53 @@ export function PerfilView() {
           </button>
         </div>
       </div>
+
+      {/* Security Questions */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="bg-purple-100 p-3 rounded-full">
+            <Lock className="size-6 text-purple-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-gray-900">Preguntas de Seguridad</h3>
+            <p className="text-sm text-gray-600">
+              {currentUser?.securityAnswers 
+                ? 'Preguntas configuradas ✅' 
+                : 'Configure 3 preguntas simples para recuperar su contraseña'}
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-lg p-5 mb-4">
+          <div className="flex items-start gap-3">
+            <Shield className="size-6 text-purple-600 flex-shrink-0 mt-1" />
+            <div className="flex-1">
+              <p className="text-gray-900 font-medium mb-2">Sistema de Recuperación Simple</p>
+              <p className="text-sm text-gray-700 mb-3">
+                Responda 3 preguntas sencillas con opciones múltiples:
+              </p>
+              <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                <li>¿Cuál es tu color favorito? (azul, rosado, negro)</li>
+                <li>Elige un número (1, 2, 3)</li>
+                <li>Elige un animal (perro, gato, loro)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setShowSecurityConfig(true)}
+          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+        >
+          <Lock className="size-5" />
+          {currentUser?.securityAnswers ? 'Actualizar Preguntas de Seguridad' : 'Configurar Preguntas de Seguridad'}
+        </button>
+      </div>
+
+      {/* Modales */}
+      {showSecurityConfig && (
+        <SecurityQuestionsConfig onClose={() => setShowSecurityConfig(false)} />
+      )}
 
       {/* Change Password */}
       <div className="bg-white rounded-lg shadow p-6">

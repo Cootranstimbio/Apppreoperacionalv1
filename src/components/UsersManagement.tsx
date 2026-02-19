@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { useUserContext, User, Role } from './UserContext';
-import { UserPlus, Edit, Trash2, X, Save } from 'lucide-react';
+import { UserPlus, Edit, Trash2, X, Save, Shield, Unlock, Eye, Key } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
+import { ChangePasswordModal } from './ChangePasswordModal';
 
 export function UsersManagement() {
   const { users, setUsers, currentUser } = useUserContext();
   const [showModal, setShowModal] = useState(false);
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<Partial<User>>({
     nombre: '',
@@ -112,6 +116,34 @@ export function UsersManagement() {
     }
   };
 
+  const handleUnblockUser = (user: User) => {
+    const updatedUsers = users.map(u =>
+      u.id === user.id ? { ...u, isBlocked: false, failedLoginAttempts: 0 } : u
+    );
+    setUsers(updatedUsers);
+    toast.success(`Usuario ${user.nombre} desbloqueado correctamente`);
+  };
+
+  const handleViewSecurity = (user: User) => {
+    setSelectedUser(user);
+    setShowSecurityModal(true);
+  };
+
+  const handleOpenChangePassword = (user: User) => {
+    setSelectedUser(user);
+    setShowChangePasswordModal(true);
+  };
+
+  const handleSavePassword = (userId: string, newPassword: string) => {
+    const updatedUsers = users.map(u =>
+      u.id === userId 
+        ? { ...u, password: newPassword, isBlocked: false, failedLoginAttempts: 0 } 
+        : u
+    );
+    setUsers(updatedUsers);
+    toast.success('Contraseña cambiada correctamente. Usuario desbloqueado.');
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow p-6">
@@ -138,6 +170,7 @@ export function UsersManagement() {
                 <th className="text-left py-3 px-4 text-gray-700">Email</th>
                 <th className="text-left py-3 px-4 text-gray-700">Teléfono</th>
                 <th className="text-left py-3 px-4 text-gray-700">Rol</th>
+                <th className="text-left py-3 px-4 text-gray-700">Estado</th>
                 <th className="text-right py-3 px-4 text-gray-700">Acciones</th>
               </tr>
             </thead>
@@ -159,7 +192,34 @@ export function UsersManagement() {
                     </span>
                   </td>
                   <td className="py-3 px-4">
+                    {user.isBlocked ? (
+                      <span className="inline-block px-2 py-1 rounded text-xs bg-red-100 text-red-800">
+                        Bloqueado
+                      </span>
+                    ) : (
+                      <span className="inline-block px-2 py-1 rounded text-xs bg-green-100 text-green-800">
+                        Activo
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
                     <div className="flex justify-end gap-2">
+                      {user.isBlocked && (
+                        <button
+                          onClick={() => handleUnblockUser(user)}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Desbloquear Usuario"
+                        >
+                          <Unlock className="size-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleViewSecurity(user)}
+                        className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                        title="Ver Seguridad"
+                      >
+                        <Shield className="size-4" />
+                      </button>
                       <button
                         onClick={() => handleOpenEdit(user)}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -174,6 +234,13 @@ export function UsersManagement() {
                         disabled={user.id === currentUser?.id}
                       >
                         <Trash2 className="size-4" />
+                      </button>
+                      <button
+                        onClick={() => handleOpenChangePassword(user)}
+                        className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                        title="Cambiar Contraseña"
+                      >
+                        <Key className="size-4" />
                       </button>
                     </div>
                   </td>
@@ -299,6 +366,93 @@ export function UsersManagement() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal de Información de Seguridad */}
+      {showSecurityModal && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h3 className="text-gray-900">Información de Seguridad</h3>
+                <button
+                  onClick={() => setShowSecurityModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <p className="text-gray-700 mb-1"><strong>Usuario:</strong> {selectedUser.nombre}</p>
+                <p className="text-gray-700 mb-1"><strong>Email:</strong> {selectedUser.email}</p>
+                <p className="text-gray-700 mb-1"><strong>Rol:</strong> {selectedUser.rol}</p>
+              </div>
+
+              <div className="border-t pt-4">
+                <p className="text-gray-700 mb-2"><strong>Estado de Seguridad:</strong></p>
+                <div className="space-y-2">
+                  <p className="text-sm">
+                    <span className="text-gray-600">Intentos fallidos:</span>{' '}
+                    <span className={`${(selectedUser.failedLoginAttempts || 0) >= 3 ? 'text-red-600' : 'text-gray-900'}`}>
+                      {selectedUser.failedLoginAttempts || 0} / 5
+                    </span>
+                  </p>
+                  <p className="text-sm">
+                    <span className="text-gray-600">Estado:</span>{' '}
+                    <span className={`${selectedUser.isBlocked ? 'text-red-600' : 'text-green-600'}`}>
+                      {selectedUser.isBlocked ? 'Bloqueado' : 'Activo'}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {selectedUser.securityQuestions && selectedUser.securityQuestions.length > 0 && (
+                <div className="border-t pt-4">
+                  <p className="text-gray-700 mb-3"><strong>Preguntas de Seguridad:</strong></p>
+                  <div className="space-y-3">
+                    {selectedUser.securityQuestions.map((sq, idx) => (
+                      <div key={idx} className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-sm text-gray-700 mb-1"><strong>{idx + 1}. {sq.question}</strong></p>
+                        <p className="text-sm text-gray-600">Respuesta: {sq.answer}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(!selectedUser.securityQuestions || selectedUser.securityQuestions.length === 0) && (
+                <div className="border-t pt-4">
+                  <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      ⚠️ Este usuario no ha configurado preguntas de seguridad
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-200">
+              <button
+                onClick={() => setShowSecurityModal(false)}
+                className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cambio de Contraseña */}
+      {showChangePasswordModal && selectedUser && (
+        <ChangePasswordModal
+          user={selectedUser}
+          onClose={() => setShowChangePasswordModal(false)}
+          onSave={handleSavePassword}
+        />
       )}
     </div>
   );

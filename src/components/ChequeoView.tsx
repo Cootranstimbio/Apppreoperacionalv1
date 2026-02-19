@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUserContext, ReporteItem } from './UserContext';
 import { Info, AlertCircle, Upload, Eye, X, CheckCircle2, FileText, Camera, CheckCheck } from 'lucide-react';
 import { SignatureCanvas } from './SignatureCanvas';
 import { toast } from 'sonner@2.0.3';
+import { DocumentViewer } from './DocumentViewer';
 
 type TipoChequeo = 'Mantenimiento' | 'Planillaje';
 type Step = 'select' | 'inspect' | 'success';
@@ -24,6 +25,7 @@ export function ChequeoView() {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
   const [previewType, setPreviewType] = useState('');
+  const [viewingDocument, setViewingDocument] = useState<{ name: string; url: string; type: string } | null>(null);
 
   // Determinar qué tipo de chequeos puede hacer el usuario
   const canDoMantenimiento = currentUser?.rol === 'Mantenimiento';
@@ -74,6 +76,17 @@ export function ChequeoView() {
   };
 
   const documentacionStatus = getDocumentacionStatus();
+
+  // Re-validar documentación cuando cambia el vehículo o conductor seleccionado
+  useEffect(() => {
+    if (selectedVehiculo && selectedConductor) {
+      const status = getDocumentacionStatus();
+      if (!status.tieneProblemas) {
+        // Si el nuevo recurso está al día, quitar alerta
+        toast.success('Documentación al día - Puede proceder con el chequeo');
+      }
+    }
+  }, [selectedVehiculo, selectedConductor]);
 
   // Filtrar ítems excluyendo llantas y rodamientos para Operador Isla
   const filteredItems = currentUser?.rol === 'Operador Isla' 
@@ -792,6 +805,14 @@ export function ChequeoView() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Document Viewer */}
+      {viewingDocument && (
+        <DocumentViewer
+          file={viewingDocument}
+          onBack={() => setViewingDocument(null)}
+        />
       )}
     </div>
   );

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Eye, Download, Search, Filter } from 'lucide-react';
 import { useUserContext } from './UserContext';
 import { ReporteDetail } from './ReporteDetail';
+import { PDFGenerator } from './PDFGenerator';
 
 export function ReportesView() {
   const { currentUser, reportes, checkItems } = useUserContext();
@@ -25,159 +26,6 @@ export function ReportesView() {
 
     return matchSearch && matchTipo;
   });
-
-  const generatePDF = (reporteId: string) => {
-    const reporte = reportes.find(r => r.id === reporteId);
-    if (!reporte) return;
-
-    // In a real app, this would generate a proper PDF using a library like jsPDF
-    // For now, we'll create a printable HTML version
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    const itemsHTML = reporte.items
-      .map(item => {
-        const checkItem = checkItems.find(ci => ci.id === item.itemId);
-        if (!checkItem) return '';
-
-        const estadoColor = item.estado === 'bien' ? 'green' : item.estado === 'regular' ? 'orange' : 'red';
-        const estadoText = item.estado === 'bien' ? 'BIEN' : item.estado === 'regular' ? 'REGULAR' : 'MAL';
-
-        return `
-          <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-              <strong>${checkItem.nombre}</strong>
-              <span style="color: ${estadoColor}; font-weight: bold;">${estadoText}</span>
-            </div>
-            ${item.observacion ? `<p style="margin: 10px 0; padding: 10px; background: #f9f9f9; border-radius: 4px;"><strong>Observación:</strong> ${item.observacion}</p>` : ''}
-            ${item.adjuntos.length > 0 ? `
-              <div style="margin-top: 15px;">
-                <strong>Evidencias Adjuntas:</strong>
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
-                  ${item.adjuntos.map(adj => {
-                    if (adj.type.startsWith('image/')) {
-                      return `<img src="${adj.url}" style="width: 100%; height: 300px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px;" />`;
-                    } else {
-                      return `<div style="padding: 20px; border: 1px solid #ddd; border-radius: 4px; text-align: center; background: #f9f9f9;">PDF: ${adj.name}</div>`;
-                    }
-                  }).join('')}
-                </div>
-              </div>
-            ` : ''}
-          </div>
-        `;
-      })
-      .join('');
-
-    // Documentos generales HTML - IMÁGENES GRANDES
-    const documentosGeneralesHTML = reporte.documentosGenerales && reporte.documentosGenerales.length > 0 ? `
-      <div style="margin: 30px 0; padding: 20px; background: #f8f5ff; border: 2px solid #9333ea; border-radius: 8px;">
-        <h2 style="color: #9333ea; margin-bottom: 20px;">Documentos y Evidencias Generales</h2>
-        <p style="margin-bottom: 15px; color: #6b7280;">${reporte.documentosGenerales.length} documento(s) adjunto(s)</p>
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 15px;">
-          ${reporte.documentosGenerales.map(doc => {
-            if (doc.type.startsWith('image/')) {
-              return `
-                <div style="page-break-inside: avoid;">
-                  <img src="${doc.url}" style="width: 100%; height: 500px; object-fit: contain; border: 2px solid #9333ea; border-radius: 8px; background: white;" />
-                  <p style="margin-top: 8px; text-align: center; font-size: 14px; color: #6b7280;">${doc.name}</p>
-                </div>
-              `;
-            } else {
-              return `
-                <div style="padding: 40px; border: 2px solid #9333ea; border-radius: 8px; text-align: center; background: white;">
-                  <div style="font-size: 48px; color: #9333ea; margin-bottom: 10px;">📄</div>
-                  <strong style="color: #9333ea;">${doc.type.split('/')[1]?.toUpperCase() || 'DOC'}</strong>
-                  <p style="margin-top: 8px; font-size: 14px; color: #6b7280;">${doc.name}</p>
-                </div>
-              `;
-            }
-          }).join('')}
-        </div>
-      </div>
-    ` : '';
-
-    // Alerta de bloqueo si existe
-    const alertaBloqueoHTML = reporte.documentacionVencida && reporte.motivoBloqueo ? `
-      <div style="margin: 20px 0; padding: 20px; background: #fef2f2; border: 3px solid #dc2626; border-radius: 8px;">
-        <div style="display: flex; align-items: start; gap: 15px;">
-          <div style="font-size: 36px;">⚠️</div>
-          <div>
-            <h3 style="color: #991b1b; margin: 0 0 10px 0;">VEHÍCULO/CONDUCTOR BLOQUEADO</h3>
-            <p style="color: #991b1b; margin: 0; padding: 10px; background: #fee2e2; border: 1px solid #dc2626; border-radius: 4px;">
-              <strong>${reporte.motivoBloqueo}</strong>
-            </p>
-            <p style="color: #7f1d1d; margin-top: 10px; font-size: 14px;">
-              Este vehículo NO debe ser despachado hasta renovar la documentación correspondiente.
-            </p>
-          </div>
-        </div>
-      </div>
-    ` : '';
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Reporte ${reporte.vehiculo.placa} - ${new Date(reporte.fecha).toLocaleDateString('es-CO')}</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
-          h1 { color: #1e40af; }
-          .header { background: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
-          .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; page-break-inside: avoid; }
-          .signature-box { text-align: center; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
-          .signature-box img { max-width: 300px; height: 150px; border: 1px solid #ddd; margin: 10px auto; display: block; }
-          @media print { .no-print { display: none; } }
-        </style>
-      </head>
-      <body>
-        <div class="no-print" style="margin-bottom: 20px;">
-          <button onclick="window.print()" style="padding: 10px 20px; background: #1e40af; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
-            Imprimir / Guardar como PDF
-          </button>
-          <button onclick="window.close()" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-left: 10px;">
-            Cerrar
-          </button>
-        </div>
-
-        <h1>TRANSTIMBIO - Reporte de Chequeo Pre-Operacional</h1>
-        
-        ${alertaBloqueoHTML}
-        
-        <div class="header">
-          <p><strong>Tipo de Chequeo:</strong> ${reporte.tipo}</p>
-          <p><strong>Fecha:</strong> ${new Date(reporte.fecha).toLocaleDateString('es-CO')} ${new Date(reporte.fecha).toLocaleTimeString('es-CO')}</p>
-          <p><strong>Vehículo:</strong> ${reporte.vehiculo.placa} - ${reporte.vehiculo.marca} ${reporte.vehiculo.modelo}</p>
-          <p><strong>Conductor:</strong> ${reporte.conductor.nombre} (${reporte.conductor.cedula})</p>
-          <p><strong>Inspector:</strong> ${reporte.inspector.nombre} (${reporte.inspector.rol})</p>
-        </div>
-
-        <h2>Ítems de Inspección</h2>
-        ${itemsHTML}
-
-        ${documentosGeneralesHTML}
-
-        <div class="signatures">
-          <div class="signature-box">
-            <h3>Firma del Inspector</h3>
-            <img src="${reporte.firmaInspector}" alt="Firma Inspector" />
-            <p>${reporte.inspector.nombre}</p>
-            <p>${reporte.inspector.rol}</p>
-          </div>
-          <div class="signature-box">
-            <h3>Firma del Conductor</h3>
-            <img src="${reporte.firmaConductor}" alt="Firma Conductor" />
-            <p>${reporte.conductor.nombre}</p>
-            <p>Cédula: ${reporte.conductor.cedula}</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    printWindow.document.write(html);
-    printWindow.document.close();
-  };
 
   if (selectedReporte) {
     const reporte = reportes.find(r => r.id === selectedReporte);
@@ -285,13 +133,7 @@ export function ReportesView() {
                         >
                           <Eye className="size-4" />
                         </button>
-                        <button
-                          onClick={() => generatePDF(reporte.id)}
-                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                          title="Descargar PDF"
-                        >
-                          <Download className="size-4" />
-                        </button>
+                        <PDFGenerator reporte={reporte} checkItems={checkItems} />
                       </div>
                     </td>
                   </tr>

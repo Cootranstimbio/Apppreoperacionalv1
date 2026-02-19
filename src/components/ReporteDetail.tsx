@@ -1,6 +1,7 @@
 import { ArrowLeft, Eye, X, FileText, AlertCircle } from 'lucide-react';
 import { Reporte, useUserContext } from './UserContext';
 import { useState } from 'react';
+import { DocumentViewer } from './DocumentViewer';
 
 interface ReporteDetailProps {
   reporte: Reporte;
@@ -12,11 +13,10 @@ export function ReporteDetail({ reporte, onClose }: ReporteDetailProps) {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
   const [previewType, setPreviewType] = useState('');
+  const [viewingDocument, setViewingDocument] = useState<{ name: string; url: string; type: string } | null>(null);
 
-  const handlePreview = (url: string, type: string) => {
-    setPreviewUrl(url);
-    setPreviewType(type);
-    setShowPreviewModal(true);
+  const handlePreview = (url: string, type: string, name: string = 'Documento') => {
+    setViewingDocument({ name, url, type });
   };
 
   const groupedItems = reporte.items.reduce((acc, item) => {
@@ -29,6 +29,17 @@ export function ReporteDetail({ reporte, onClose }: ReporteDetailProps) {
     acc[checkItem.modulo].push({ ...item, checkItem });
     return acc;
   }, {} as Record<string, Array<typeof reporte.items[0] & { checkItem: typeof checkItems[0] }>>);
+
+  // Si está viendo un documento, mostrar el visor
+  if (viewingDocument) {
+    return (
+      <DocumentViewer
+        file={viewingDocument}
+        timestamp={reporte.fecha}
+        onBack={() => setViewingDocument(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -139,7 +150,7 @@ export function ReporteDetail({ reporte, onClose }: ReporteDetailProps) {
                           <div
                             key={index}
                             className="relative border border-gray-200 rounded-lg overflow-hidden group cursor-pointer"
-                            onClick={() => handlePreview(adjunto.url, adjunto.type)}
+                            onClick={() => handlePreview(adjunto.url, adjunto.type, adjunto.name)}
                           >
                             {adjunto.type.startsWith('image/') ? (
                               <img
@@ -185,7 +196,7 @@ export function ReporteDetail({ reporte, onClose }: ReporteDetailProps) {
                 <div
                   key={index}
                   className="relative border border-gray-200 rounded-lg overflow-hidden group cursor-pointer shadow hover:shadow-lg transition-shadow"
-                  onClick={() => handlePreview(doc.url, doc.type)}
+                  onClick={() => handlePreview(doc.url, doc.type, doc.name)}
                 >
                   {doc.type.startsWith('image/') ? (
                     <div className="aspect-video">
